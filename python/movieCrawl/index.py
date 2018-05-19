@@ -1,66 +1,58 @@
-import requests
 import re
 import webbrowser
 from urllib.parse import quote
+
+import requests
 from bs4 import BeautifulSoup
 
-HTML_PATH = 'D:/Project/python/result.html'
+import sites.btbtdy as btbtdy
+import sites.dytt8 as dytt8
 
-def getHtmlSoup (url):
-    r = requests.get(url)
-    try:
-        soup = BeautifulSoup(r.text, "html5lib")
-    except:
-        raise Exception("解析html出错")
-    return soup
+HTML_PATH = 'D:/Project/others/python/movieCrawl/result.html'
 
-# 获取一部电影的所有下载链接
-def getMagnetByBtbtdy (url, title):
-    moviePage = getHtmlSoup(url)
-    movieLink = []
-    for ul in moviePage.select('.p_list_02'):
-        movieLink.append({
-            'title': ul.select('.ico_1')[0].get_text(),
-            'link': ul.find_all("a")[1]['href']
-        })
-    return movieLink
-
-def resultFormat(list,movieName):
-    htmlStr = '''<!DOCTYPE html>
+def getHtmlTam(movieName):
+    html = '''<!DOCTYPE html>
         <html lang="en"><head><meta charset="UTF-8"><title>Document</title></head>
         <body>
-        <h1>''' + movieName + ' （www.btbtdy.com）搜索结果</h1><ul>'
+        <main><h1>''' + movieName + ' <small>搜索结果</small></h1></main></body></html>'
+    return BeautifulSoup(html, "html5lib")
+
+def btbtdyFormat(list):
+    if (len(list) == 0):
+        return BeautifulSoup('<h2>BT电影天堂（www.btbtdy.com）</h2><h4> 找不到该电影</h4>', "html5lib")
+    htmlStr = '<h2>BT电影天堂（www.btbtdy.com）</h2><ul>'
     for movie in list:
-        htmlStr = htmlStr + '<li><h3>' + movie['title'] + '</h3><ol>'
+        htmlStr = htmlStr + '<li><h4>' + movie['title'] + '</h4><ol>'
         for movieLink in movie['content']:
             htmlStr = htmlStr + '<li><a href=\"' + movieLink['link'] + '\">' + movieLink['title'] + '</a></li>'
         htmlStr = htmlStr + '</ol></li>'
-    htmlStr = htmlStr + '</ul></body></html>'
-    return htmlStr
+    htmlStr = htmlStr + '</ul>'
+    return BeautifulSoup(htmlStr, "html5lib")
 
+def dytt8Format(list):
+    if (len(list) == 0):
+        return BeautifulSoup('<h2>电影天堂（dytt8）</h2><h4> 找不到该电影</h4>', "html5lib")
+    htmlStr = '<h2>电影天堂（dytt8）</h2><ol>'
+    for movie in list:
+        htmlStr = htmlStr + '<li><a href=' + movie['link'] + '>' + movie['title'] + '</a></li>'
+    htmlStr = htmlStr + '</ol>'
+    return BeautifulSoup(htmlStr, "html5lib")
 
 # 存储最终搜索结果
 allLink = []
 
 movieName = input("输入电影名称:")
-print('开始检索...')
-searchSoup = getHtmlSoup('http://www.btbtdy.com/search/' + quote(movieName) + '.html')
-
-dlEle = searchSoup.find_all("dl")
-if (len(dlEle) > 0):
-    for dl in dlEle:
-        mTitle = (dl.find('a')['title'])
-        movieId = re.findall(r'\d+', dl.find('a')['href'])[0]
-        downloadPagePath = 'http://www.btbtdy.com/vidlist/' + movieId + '.html'
-        print(downloadPagePath)
-        allLink.append({
-            'title': mTitle,
-            'content' : getMagnetByBtbtdy(downloadPagePath, dl.find('a')['title'])
-        })
-    print('正在写入文件...')
-    with open(HTML_PATH,'w',encoding='utf-8') as file:
-        file.write(resultFormat(allLink,movieName))
-        print('正在打开文件')
-        webbrowser.open(HTML_PATH)
-else:
-    print('找不到该电影!!!')
+print('正在检索电影天堂...')
+dytt8Dict = dytt8.getMovieLink(movieName)
+print('正在检索BT电影天堂...')
+btbtdyDict = btbtdy.getMovieLink(movieName)
+# print(btbtdyDict)
+# print(dytt8Dict)
+print('正在写入文件...')
+with open(HTML_PATH,'w',encoding='utf-8') as file:
+    htmlSoup = getHtmlTam(movieName)
+    htmlSoup.main.append(dytt8Format(dytt8Dict))
+    htmlSoup.main.append(btbtdyFormat(btbtdyDict))
+    file.write(htmlSoup.prettify())
+    print('正在打开文件')
+    webbrowser.open(HTML_PATH)
