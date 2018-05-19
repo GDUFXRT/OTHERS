@@ -3,17 +3,18 @@ import base64
 import re
 from bs4 import BeautifulSoup
 
+# 电影天堂链接获取方法
 def ThunderEncode (url):
     targetStr = 'AA' + url + 'ZZ'
     return 'thunder://' + re.sub(r'^b|[\"\']', '', str(base64.b64encode(targetStr.encode('utf-8'))))
 
 def _getHtmlSoup (url):
-    r = requests.get(url)
-    r.encoding = 'gb2312'
     try:
+        r = requests.get(url)
+        r.encoding = 'gb2312'
         soup = BeautifulSoup(r.text, "html5lib")
     except:
-        raise Exception("解析html出错")
+        raise Exception("dytt8请求出错")
     return soup
 
 # 获取一部电影的所有下载链接
@@ -38,5 +39,6 @@ def getMovieLink (movieName):
     return allLink
 
 if __name__=='__main__':
-    print('测试,搜索电影：黑豹')
-    getMovieLink('黑豹')
+    print('测试')
+    results = getMovieLink(input("输入电影名称:"))
+    print('搜索结果：%s' % results)

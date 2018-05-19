@@ -5,12 +5,13 @@ import webbrowser
 from urllib.parse import quote
 from bs4 import BeautifulSoup
 
+# 获取响应数据并返回BeautifulSoup
 def _getHtmlSoup (url):
-    r = requests.get(url)
     try:
+        r = requests.get(url)
         soup = BeautifulSoup(r.text, "html5lib")
     except:
-        raise Exception("解析html出错")
+        raise Exception("请求出错")
     return soup
 
 # 获取一部电影的所有下载链接
@@ -44,4 +45,6 @@ def getMovieLink (movieName):
         return []
 
 if __name__=='__main__':
-    getMovieLink(input("输入电影名称:"))
+    print('测试')
+    results = getMovieLink(input("输入电影名称:"))
+    print('搜索结果：%s' % results)
